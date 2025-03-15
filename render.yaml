@@ -1,0 +1,52 @@
+services:
+  - type: web
+    name: ai-fintech-dashboard
+    env: static
+    buildCommand: mkdir -p public && cp dashboard.html public/index.html && cp README.md public/
+    staticPublishPath: ./public
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+
+  - type: web
+    name: ai-fintech-data-ingestion
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd services/data_ingestion && python3 main.py
+    envVars:
+      - key: PORT
+        value: 8001
+      - key: HOST
+        value: 0.0.0.0
+      - key: PYTHON_VERSION
+        value: 3.10.0
+
+  - type: web
+    name: ai-fintech-llm-service
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd services/llm_service && python3 main.py
+    envVars:
+      - key: PORT
+        value: 8002
+      - key: HOST
+        value: 0.0.0.0
+      - key: PYTHON_VERSION
+        value: 3.10.0
+
+  - type: web
+    name: ai-fintech-trading-engine
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd services/trading_engine && python3 main.py
+    envVars:
+      - key: PORT
+        value: 8003
+      - key: HOST
+        value: 0.0.0.0
+      - key: PYTHON_VERSION
+        value: 3.10.0

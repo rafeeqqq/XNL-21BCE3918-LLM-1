@@ -609,4 +609,10 @@ async def shutdown_event():
 # Run the application
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
+    import os
+    
+    # Get port from environment variable or use default
+    port = int(os.environ.get("PORT", 8001))
+    host = os.environ.get("HOST", "0.0.0.0")
+    
+    uvicorn.run("main:app", host=host, port=port, reload=True)
