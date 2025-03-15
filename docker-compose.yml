@@ -1,0 +1,247 @@
+version: '3.8'
+
+services:
+  # API Gateway
+  api:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api.Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+    depends_on:
+      - redis
+      - postgres
+      - kafka
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql://fintech:password@postgres:5432/fintech
+      - REDIS_URL=redis://redis:6379/0
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    networks:
+      - fintech-network
+
+  # LLM Service
+  llm-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/llm.Dockerfile
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./:/app
+      - llm-models:/app/models/llm/weights
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - ENVIRONMENT=development
+      - REDIS_URL=redis://redis:6379/0
+    networks:
+      - fintech-network
+
+  # Trading Engine
+  trading-engine:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/trading.Dockerfile
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./:/app
+    depends_on:
+      - redis
+      - kafka
+      - clickhouse
+    environment:
+      - ENVIRONMENT=development
+      - REDIS_URL=redis://redis:6379/0
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - CLICKHOUSE_URL=clickhouse://clickhouse:9000/trading
+    networks:
+      - fintech-network
+
+  # Data Ingestion Service
+  data-ingestion:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/data.Dockerfile
+    volumes:
+      - ./:/app
+    depends_on:
+      - kafka
+      - postgres
+    environment:
+      - ENVIRONMENT=development
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - DATABASE_URL=postgresql://fintech:password@postgres:5432/fintech
+    networks:
+      - fintech-network
+
+  # Fraud Detection Service
+  fraud-detection:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/fraud.Dockerfile
+    volumes:
+      - ./:/app
+    depends_on:
+      - neo4j
+      - kafka
+    environment:
+      - ENVIRONMENT=development
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=password
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    networks:
+      - fintech-network
+
+  # Frontend UI
+  frontend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/frontend.Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./ui:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    networks:
+      - fintech-network
+
+  # Databases
+  postgres:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=fintech
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=fintech
+    networks:
+      - fintech-network
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    networks:
+      - fintech-network
+
+  neo4j:
+    image: neo4j:5.12
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j-data:/data
+    environment:
+      - NEO4J_AUTH=neo4j/password
+    networks:
+      - fintech-network
+
+  # Caching and Message Queue
+  redis:
+    image: redis:7.2
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - fintech-network
+
+  # Kafka for event streaming
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    ports:
+      - "2181:2181"
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+    networks:
+      - fintech-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+    networks:
+      - fintech-network
+
+  # Monitoring
+  prometheus:
+    image: prom/prometheus:v2.46.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - fintech-network
+
+  grafana:
+    image: grafana/grafana:10.1.4
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - fintech-network
+
+  # ELK Stack for logging
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - fintech-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.10.2
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - fintech-network
+
+networks:
+  fintech-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  clickhouse-data:
+  neo4j-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+  elasticsearch-data:
+  llm-models:

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered FinTech Platform Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #1a237e;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .service-status {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .status-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            width: 30%;
+            min-width: 300px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .status-card:hover {
+            transform: translateY(-5px);
+        }
+        .status-card h2 {
+            color: #1a237e;
+            margin-top: 0;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .status-healthy {
+            background-color: #4caf50;
+        }
+        .status-warning {
+            background-color: #ff9800;
+        }
+        .status-error {
+            background-color: #f44336;
+        }
+        .action-panels {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .panel {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            width: 48%;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .panel h2 {
+            color: #1a237e;
+            margin-top: 0;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        textarea, input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #1a237e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #303f9f;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            border-left: 4px solid #1a237e;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        @media (max-width: 768px) {
+            .status-card, .panel {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>AI-Powered FinTech Platform</h1>
+            <p>Comprehensive trading and financial analysis platform with AI capabilities</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="service-status">
+            <div class="status-card" id="data-ingestion-status">
+                <h2>Data Ingestion Service</h2>
+                <p><span class="status-indicator status-healthy" id="data-ingestion-indicator"></span> <span id="data-ingestion-text">Checking status...</span></p>
+                <div id="data-ingestion-details"></div>
+            </div>
+            <div class="status-card" id="llm-service-status">
+                <h2>LLM Service</h2>
+                <p><span class="status-indicator status-healthy" id="llm-service-indicator"></span> <span id="llm-service-text">Checking status...</span></p>
+                <div id="llm-service-details"></div>
+            </div>
+            <div class="status-card" id="trading-engine-status">
+                <h2>Trading Engine</h2>
+                <p><span class="status-indicator status-healthy" id="trading-engine-indicator"></span> <span id="trading-engine-text">Checking status...</span></p>
+                <div id="trading-engine-details"></div>
+            </div>
+        </div>
+
+        <div class="action-panels">
+            <div class="panel">
+                <h2>Market Data</h2>
+                <div>
+                    <label for="symbol">Symbol:</label>
+                    <input type="text" id="symbol" placeholder="Enter stock symbol (e.g., AAPL)" value="AAPL">
+                    
+                    <label for="data-type">Data Type:</label>
+                    <select id="data-type">
+                        <option value="historical">Historical Data</option>
+                        <option value="news">News</option>
+                    </select>
+                    
+                    <button onclick="fetchMarketData()">Fetch Data</button>
+                    
+                    <div id="market-data-result" class="result" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2>Sentiment Analysis</h2>
+                <div>
+                    <label for="sentiment-text">Text to Analyze:</label>
+                    <textarea id="sentiment-text" rows="5" placeholder="Enter financial text for sentiment analysis">Apple announces record quarterly revenue with strong iPhone sales and growing services segment. Analysts are optimistic about the company's future growth potential.</textarea>
+                    
+                    <button onclick="analyzeSentiment()">Analyze Sentiment</button>
+                    
+                    <div id="sentiment-result" class="result" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2>Trading Operations</h2>
+                <div>
+                    <label for="order-symbol">Symbol:</label>
+                    <input type="text" id="order-symbol" placeholder="Enter stock symbol" value="AAPL">
+                    
+                    <label for="order-quantity">Quantity:</label>
+                    <input type="number" id="order-quantity" placeholder="Enter quantity" value="10">
+                    
+                    <label for="order-side">Side:</label>
+                    <select id="order-side">
+                        <option value="buy">Buy</option>
+                        <option value="sell">Sell</option>
+                    </select>
+                    
+                    <label for="order-type">Order Type:</label>
+                    <select id="order-type">
+                        <option value="market">Market</option>
+                        <option value="limit">Limit</option>
+                    </select>
+                    
+                    <div id="limit-price-container" style="display: none;">
+                        <label for="limit-price">Limit Price:</label>
+                        <input type="number" id="limit-price" placeholder="Enter limit price">
+                    </div>
+                    
+                    <button onclick="createOrder()">Create Order</button>
+                    
+                    <div id="order-result" class="result" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2>Portfolio Status</h2>
+                <div>
+                    <button onclick="checkPortfolio()">Check Portfolio</button>
+                    
+                    <div id="portfolio-result" class="result" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check service status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServiceStatus('data-ingestion', 'http://localhost:8001/health');
+            checkServiceStatus('llm-service', 'http://localhost:8002/health');
+            checkServiceStatus('trading-engine', 'http://localhost:8003/health');
+            
+            // Show/hide limit price field based on order type
+            document.getElementById('order-type').addEventListener('change', function() {
+                const limitPriceContainer = document.getElementById('limit-price-container');
+                if (this.value === 'limit') {
+                    limitPriceContainer.style.display = 'block';
+                } else {
+                    limitPriceContainer.style.display = 'none';
+                }
+            });
+        });
+
+        // Check service status
+        function checkServiceStatus(serviceId, url) {
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const indicator = document.getElementById(`${serviceId}-indicator`);
+                    const text = document.getElementById(`${serviceId}-text`);
+                    const details = document.getElementById(`${serviceId}-details`);
+                    
+                    indicator.className = 'status-indicator status-healthy';
+                    text.textContent = 'Healthy';
+                    
+                    // Display service details
+                    let detailsHtml = '<ul>';
+                    for (const [key, value] of Object.entries(data)) {
+                        if (key !== 'status') {
+                            detailsHtml += `<li><strong>${key}:</strong> ${JSON.stringify(value)}</li>`;
+                        }
+                    }
+                    detailsHtml += '</ul>';
+                    details.innerHTML = detailsHtml;
+                })
+                .catch(error => {
+                    const indicator = document.getElementById(`${serviceId}-indicator`);
+                    const text = document.getElementById(`${serviceId}-text`);
+                    
+                    indicator.className = 'status-indicator status-error';
+                    text.textContent = 'Error: ' + error.message;
+                });
+        }
+
+        // Fetch market data
+        function fetchMarketData() {
+            const symbol = document.getElementById('symbol').value;
+            const dataType = document.getElementById('data-type').value;
+            const resultElement = document.getElementById('market-data-result');
+            
+            let url;
+            if (dataType === 'historical') {
+                url = `http://localhost:8001/historical/${symbol}?period=1d&interval=5m&limit=10`;
+            } else {
+                url = `http://localhost:8001/news?symbols=${symbol}&limit=5`;
+            }
+            
+            resultElement.textContent = 'Loading...';
+            resultElement.style.display = 'block';
+            
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    resultElement.textContent = JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    resultElement.textContent = 'Error: ' + error.message;
+                });
+        }
+
+        // Analyze sentiment
+        function analyzeSentiment() {
+            const text = document.getElementById('sentiment-text').value;
+            const resultElement = document.getElementById('sentiment-result');
+            
+            resultElement.textContent = 'Analyzing...';
+            resultElement.style.display = 'block';
+            
+            fetch('http://localhost:8002/sentiment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    resultElement.textContent = JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    resultElement.textContent = 'Error: ' + error.message;
+                });
+        }
+
+        // Create order
+        function createOrder() {
+            const symbol = document.getElementById('order-symbol').value;
+            const quantity = document.getElementById('order-quantity').value;
+            const side = document.getElementById('order-side').value;
+            const orderType = document.getElementById('order-type').value;
+            const resultElement = document.getElementById('order-result');
+            
+            const orderData = {
+                symbol,
+                quantity: parseFloat(quantity),
+                side,
+                order_type: orderType,
+                time_in_force: 'good_till_canceled',
+                asset_type: 'stock'
+            };
+            
+            if (orderType === 'limit') {
+                const limitPrice = document.getElementById('limit-price').value;
+                if (!limitPrice) {
+                    resultElement.textContent = 'Error: Limit price is required for limit orders';
+                    resultElement.style.display = 'block';
+                    return;
+                }
+                orderData.price = parseFloat(limitPrice);
+            }
+            
+            resultElement.textContent = 'Creating order...';
+            resultElement.style.display = 'block';
+            
+            fetch('http://localhost:8003/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    resultElement.textContent = JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    resultElement.textContent = 'Error: ' + error.message;
+                });
+        }
+
+        // Check portfolio
+        function checkPortfolio() {
+            const resultElement = document.getElementById('portfolio-result');
+            
+            resultElement.textContent = 'Loading portfolio...';
+            resultElement.style.display = 'block';
+            
+            fetch('http://localhost:8003/portfolio')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    resultElement.textContent = JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    resultElement.textContent = 'Error: ' + error.message;
+                });
+        }
+    </script>
+</body>
+</html>
